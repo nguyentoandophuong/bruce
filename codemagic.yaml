@@ -1,21 +1,38 @@
+
 workflows:
   android-debug:
     name: TCL TV PIN Demo - Debug APK
-    instance_type: linux_x2
+    instance_type: mac_mini_m2
     max_build_duration: 30
+
     environment:
       java: 17
+
     scripts:
-      - name: Install Gradle 8.10.2 and Android SDK 35
+      - name: Check Android SDK and Java
         script: |
-          set -e
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
-          curl -fsSL https://services.gradle.org/distributions/gradle-8.10.2-bin.zip -o /tmp/gradle.zip
+          echo "JAVA:"
+          java -version
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "SDK directories:"
+          ls "$ANDROID_SDK_ROOT/platforms" || true
+          ls "$ANDROID_SDK_ROOT/build-tools" || true
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+
+      - name: Install Gradle 8.10.2
+        script: |
+          curl -fL --retry 3 \
+            https://services.gradle.org/distributions/gradle-8.10.2-bin.zip \
+            -o /tmp/gradle.zip
           unzip -q /tmp/gradle.zip -d /tmp
           /tmp/gradle-8.10.2/bin/gradle --version
-      - name: Build debug APK
+
+      - name: Build TCL TV PIN APK
         script: |
-          set -e
-          /tmp/gradle-8.10.2/bin/gradle :app:assembleDebug --no-daemon
+          /tmp/gradle-8.10.2/bin/gradle \
+            :app:assembleDebug \
+            --stacktrace --no-daemon
+
     artifacts:
       - app/build/outputs/apk/debug/*.apk
